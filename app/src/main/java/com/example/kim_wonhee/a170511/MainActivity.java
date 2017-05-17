@@ -83,11 +83,12 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         }
 
-
-
         //--- 외부 메모리 파일 목록
         File[] files = new File(path + "/diary/").listFiles();
         memo_count = files.length;
+
+        for (int i = 0; i < memo_count; i++)
+            filename.add(files[i].getName());
 
         textView.setText("등록된 메모 개수 : " + memo_count);
 
@@ -99,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
                 AlertDialog.Builder dlg = new AlertDialog.Builder(MainActivity.this);
-
                 dlg.setTitle("삭제확인");
                 dlg.setIcon(R.drawable.memo);
                 dlg.setMessage("삭제하시겠습니까? ");
@@ -172,11 +172,10 @@ public class MainActivity extends AppCompatActivity {
         String ext = Environment.getExternalStorageState();
         if(ext.equals(Environment.MEDIA_MOUNTED)) {
             sdPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-        }else
+        } else
             sdPath = getFilesDir() + "";
-        //Toast.makeText(getApplicationContext(), sdPath, Toast.LENGTH_SHORT).show();
         return sdPath;
-        }
+    }
 
     //--- 위험 Permission 권한 부여
     //@Override
@@ -210,18 +209,32 @@ public class MainActivity extends AppCompatActivity {
             linearLayout1.setVisibility(View.INVISIBLE);
             linearLayout2.setVisibility(View.VISIBLE);
         } else if (v.getId() == R.id.btnsave) {
-            //--- 외부 메모리(SD Card) 파일 쓰기
-            try {
-                String path = getExternalPath() + "/diary/";
-                BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
-                bw.write(editText.getText().toString());
-                bw.close();
-                filename.add(file_name);
-                adapter.notifyDataSetChanged();
-                Toast.makeText(this, "저장완료", Toast.LENGTH_SHORT).show();
-            } catch (IOException e) {
-                e.printStackTrace();
-                Toast.makeText(this, e.getMessage() + ":" + getFilesDir(), Toast.LENGTH_SHORT).show();
+            String what = save_button.getText().toString();
+            String path = getExternalPath() + "/diary/";
+            if (what.equals("수정")) {
+                // 수정하기
+                try {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
+                    bw.write(editText.getText().toString());
+                    bw.close();
+                    Toast.makeText(this, "수정되었습니다. ", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (what.equals("저장")) {
+                // 저장하기
+                //--- 외부 메모리(SD Card) 파일 쓰기
+                try {
+                   // String path = getExternalPath() + "/diary/";
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
+                    bw.write(editText.getText().toString());
+                    bw.close();
+                    filename.add(file_name);
+                    adapter.notifyDataSetChanged();
+                    Toast.makeText(this, "저장되었습니다. ", Toast.LENGTH_SHORT).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             linearLayout1.setVisibility(View.VISIBLE);
             linearLayout2.setVisibility(View.INVISIBLE);
