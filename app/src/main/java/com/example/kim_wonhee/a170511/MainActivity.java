@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> adapter;
 
     int memo_count = 0;
+    int SAVE = 0;
 
 
     @Override
@@ -109,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int which) {
                                 memo_count--;
                                 textView.setText("등록된 메모 개수 : " + memo_count);
-                                File file = new File(path + "/diary" + filename.get(position));
+                                File file = new File(path + "/diary/" + filename.get(position));
                                 file.delete();
                                 filename.remove(position);
                                 adapter.notifyDataSetChanged();
@@ -192,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
 //    }
 
     public void onClick(View v) {
+
         //--- file_name
         int year = datePicker.getYear() - 2000;
         int month = datePicker.getMonth() + 1;
@@ -209,49 +211,100 @@ public class MainActivity extends AppCompatActivity {
             linearLayout1.setVisibility(View.INVISIBLE);
             linearLayout2.setVisibility(View.VISIBLE);
         } else if (v.getId() == R.id.btnsave) {
+
             String what = save_button.getText().toString();
             String path = getExternalPath() + "/diary/";
+
             if (what.equals("수정")) {
                 // 수정하기
                 try {
                     BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
                     bw.write(editText.getText().toString());
                     bw.close();
+
                     Toast.makeText(this, "수정되었습니다. ", Toast.LENGTH_SHORT).show();
+                    save_button.setText("저장");
+
+                    linearLayout1.setVisibility(View.VISIBLE);
+                    linearLayout2.setVisibility(View.INVISIBLE);
+                    resetMemo();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             } else if (what.equals("저장")) {
-                // 저장하기
-                //--- 외부 메모리(SD Card) 파일 쓰기
-                try {
-                   // String path = getExternalPath() + "/diary/";
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
-                    bw.write(editText.getText().toString());
-                    bw.close();
-                    filename.add(file_name);
-                    adapter.notifyDataSetChanged();
-                    Toast.makeText(this, "저장되었습니다. ", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (filename.size() == 0)
+                    SAVE = 1; //--- 새로운 파일 저장하기
+                else {
+                    for (int i = 0; i < filename.size(); i++) {
+                        String one = filename.get(i).toString();
+                        if (one.equals(file_name)) {
+                            SAVE = 2; //--- 이전 메모를 불러오기
+                        } else {
+                            SAVE = 1; //--- 새로운 파일 저장하기
+                        }
+                    }
+                }
+
+                //--- 새로운 파일 저장하기
+                if (SAVE == 1) {
+                    try {
+                        // String path = getExternalPath() + "/diary/";
+                        BufferedWriter bw = new BufferedWriter(new FileWriter(path + file_name, false));
+                        bw.write(editText.getText().toString());
+                        bw.close();
+                        filename.add(file_name);
+                        adapter.notifyDataSetChanged();
+
+                        Toast.makeText(this, "저장되었습니다. ", Toast.LENGTH_SHORT).show();
+                        ++memo_count;
+                        textView.setText("등록된 메모 개수 : " + memo_count);
+
+                        linearLayout1.setVisibility(View.VISIBLE);
+                        linearLayout2.setVisibility(View.INVISIBLE);
+                        resetMemo();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //--- 이전 메모를 불러오기
+                else if (SAVE == 2) {
+                    try {
+                        save_button.setText("수정");
+                        Toast.makeText(this, "이전 메모를 불러오겠습니다  ", Toast.LENGTH_SHORT).show();
+
+                        //--- 외부 메모리(SD Card) 파일 읽기
+                        BufferedReader br = new BufferedReader(new FileReader(path + file_name));
+                        String readStr = "";
+                        String str = null;
+                        while ((str = br.readLine()) != null)
+                            readStr += str + "\n";
+                        br.close();
+                        editText.setText(readStr);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-            linearLayout1.setVisibility(View.VISIBLE);
-            linearLayout2.setVisibility(View.INVISIBLE);
         } else if (v.getId() == R.id.btncancel) {
             linearLayout1.setVisibility(View.VISIBLE);
             linearLayout2.setVisibility(View.INVISIBLE);
-            //--- editText 초기화
-            editText.setText(null);
-            //--- datePicker 초기화
-            Calendar cal= Calendar.getInstance();
-            int now_year=cal.get(Calendar.YEAR);
-            int now_month=cal.get(Calendar.MONTH);
-            int now_day=cal.get(Calendar.DAY_OF_MONTH);
-            datePicker.updateDate(now_year, now_month, now_day);
+            resetMemo();
         }
 
     }
 
+    //--- 메모 초기화
+    void resetMemo() {
+        //--- editText 초기화
+        editText.setText(null);
+        //--- datePicker 초기화
+        Calendar cal= Calendar.getInstance();
+        int now_year=cal.get(Calendar.YEAR);
+        int now_month=cal.get(Calendar.MONTH);
+        int now_day=cal.get(Calendar.DAY_OF_MONTH);
+        datePicker.updateDate(now_year, now_month, now_day);
+    }
 
 }
